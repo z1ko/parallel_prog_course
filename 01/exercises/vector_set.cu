@@ -10,12 +10,7 @@
     }                                                                          \
   }
 
-__global__ void kernel_vector_set(int *v, int value, int N) {
-  auto gid = threadIdx.x + blockDim.x * blockIdx.x;
-  if (gid < N) {
-    v[gid] = value;
-  }
-}
+//@@ Write kernel for vector initialization
 
 int main() {
 
@@ -26,17 +21,9 @@ int main() {
 
   //@@ Allocate managed memory
 
-  cudaMallocManaged(&vector, N * sizeof(int));
-
   //@@ Initialize the grid and block dimensions
 
-  const int threads = 128;
-  const int blocks = (N + threads - 1) / threads;
-
   //@@ Launch kernel to set all elements of vector
-
-  kernel_vector_set<<<blocks, threads>>>(vector, VALUE, N);
-  cudaDeviceSynchronize();
 
   for (int i = 0; i < N; i++) {
     printf("[%d]: %d\n", i, vector[i]);
@@ -47,8 +34,6 @@ int main() {
   }
 
   //@@ Free memory
-
-  cudaFree(vector);
 
   return 0;
 }
