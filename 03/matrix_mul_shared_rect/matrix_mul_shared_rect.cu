@@ -7,10 +7,10 @@
 // ===================================================================================
 // CONFIGURATION
 
-// A: KxN, B: NxM, C: KxM 
-#define K 2
-#define N 4
-#define M 2
+// A: PxW, B: WxQ, C: PxQ 
+#define P 2
+#define W 4
+#define Q 2
 
 #define TILE_SIZE 32
 
@@ -42,14 +42,14 @@ void print_matrix(const std::vector<int>& matrix, int h, int w) {
 // @@ IMPLEMENTATION
 
 //@@ Implement the naive matrix multiplication
-// A: k x n, B: n x m, C: k x m 
-__global__ void matmul_gpu_naive(int *A, int* B, int *O, int k, int n, int m) {
+// A: p x w, B: w x q, C: p x q 
+__global__ void matmul_gpu_naive(int *A, int* B, int *O, int p, int w, int q) {
     // @@ ...
 }
 
 //@@ Implement the tiled matrix multiplication using the shared memory
-// A: k x n, B: n x m, C: k x m
-__global__ void matmul_gpu_shmem(int *A, int* B, int *O, int k, int n, int m) {
+// A: p x w, B: w x q, C: p x q
+__global__ void matmul_gpu_shmem(int *A, int* B, int *O, int p, int w, int q) {
     // @@ ...
 }
 
@@ -59,39 +59,39 @@ int main(int argc, char** argv) {
 
     // Generates random matrix data
     printf("generating random data...\n");
-    auto A = random_matrix<int>(K, N, 2000 /* RNG SEED */);
-    auto B = random_matrix<int>(N, M, 2001 /* RNG SEED */);
+    auto A = random_matrix<int>(P, W, 2000 /* RNG SEED */);
+    auto B = random_matrix<int>(W, Q, 2001 /* RNG SEED */);
     printf("done\n");
 
-    print_matrix(A, K, N);
-    print_matrix(B, N, M);
+    //print_matrix(A, P, W);
+    //print_matrix(B, W, Q);
 
     std::vector<int> result_cpu{};
-    result_cpu.resize(K * M);
+    result_cpu.resize(P * Q);
 
     std::vector<int> result_gpu_naive{};
-    result_gpu_naive.resize(K * M);
+    result_gpu_naive.resize(P * Q);
 
     std::vector<int> result_gpu_shmem{};
-    result_gpu_shmem.resize(K * M);
+    result_gpu_shmem.resize(P * Q);
 
     // Setup blocks and threads count
     dim3 threads = dim3(TILE_SIZE, TILE_SIZE);
     dim3 blocks = dim3(
-        (K + TILE_SIZE - 1) / TILE_SIZE,
-        (M + TILE_SIZE - 1) / TILE_SIZE
+        (P + TILE_SIZE - 1) / TILE_SIZE,
+        (Q + TILE_SIZE - 1) / TILE_SIZE
     );
 
     // Allocate all necessary matrices in GPU memory
     int *d_A, *d_B, *d_O;
-    cudaMalloc((void**)&d_A, K * N * sizeof(int));
-    cudaMalloc((void**)&d_B, N * M * sizeof(int));
-    cudaMalloc((void**)&d_O, K * M * sizeof(int));
+    cudaMalloc((void**)&d_A, P * W * sizeof(int));
+    cudaMalloc((void**)&d_B, W * Q * sizeof(int));
+    cudaMalloc((void**)&d_O, P * Q * sizeof(int));
     cuda_check_error();
 
     // Copy data from CPU to GPU
-    cudaMemcpy(d_A, A.data(), K * N * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, B.data(), N * M * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_A, A.data(), P * W * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B.data(), W * Q * sizeof(int), cudaMemcpyHostToDevice);
     cuda_check_error();
 
     // ================================================================================================
@@ -100,11 +100,11 @@ int main(int argc, char** argv) {
     auto timer_cpu = timerCPU{};
     timer_cpu.start();
 
-    result_cpu = matmul_cpu<int>(A, B, K, N, M);
+    result_cpu = matmul_cpu<int>(A, B, P, W, Q);
     
     timer_cpu.stop();
     
-    print_matrix(result_cpu, K, M);
+    //print_matrix(result_cpu, P, Q);
 
     // ================================================================================================
     // GPU NAIVE
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     auto timer_gpu_naive = timerGPU{};
     timer_gpu_naive.start();
 
-    matmul_gpu_naive<<<blocks, threads>>>(d_A, d_B, d_O, K, N, M);
+    matmul_gpu_naive<<<blocks, threads>>>(d_A, d_B, d_O, P, W, Q);
 
     timer_gpu_naive.stop();
     cuda_check_error();
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     timer_gpu_shmem.start();
 
     // Invoke kernel
-    matmul_gpu_shmem<<<blocks, threads>>>(d_A, d_B, d_O, K, N, M);
+    matmul_gpu_shmem<<<blocks, threads>>>(d_A, d_B, d_O, P, W, Q);
     
     timer_gpu_shmem.stop();
 
@@ -158,10 +158,10 @@ int main(int argc, char** argv) {
     // ================================================================================================
     // CHECK
 
-    bool ok_naive = mat_check_result(result_cpu, result_gpu_naive, N);
+    bool ok_naive = mat_check_result(result_cpu, result_gpu_naive, P, Q);
     printf("Solution CPU vs NAIVE: %s\n", ok_naive ? "CORRECT" : "INCORRECT");
 
-    bool ok_shmem = mat_check_result(result_cpu, result_gpu_shmem, N);
+    bool ok_shmem = mat_check_result(result_cpu, result_gpu_shmem, P, Q);
     printf("Solution CPU vs SHMEM: %s\n", ok_shmem ? "CORRECT" : "INCORRECT");
 
     // Free cuda memory

@@ -13,7 +13,7 @@ std::vector<T> matmul_cpu(const std::vector<T>& A, const std::vector<T>& B, int 
 
 // Check if two matrices are equals or approx equals
 template<typename T>
-bool mat_check_result(const std::vector<T>& cpu, const std::vector<T>& gpu, int N);
+bool mat_check_result(const std::vector<T>& cpu, const std::vector<T>& gpu, int p, int q);
 
 #ifdef PPROG_IMPLEMENTATION
 
@@ -41,13 +41,13 @@ std::vector<T> matmul_cpu(const std::vector<T>& A, const std::vector<T>& B, int 
 }
 
 template<typename T>
-bool mat_check_result(const std::vector<T>& cpu, const std::vector<T>& gpu, int N) {
+bool mat_check_result(const std::vector<T>& cpu, const std::vector<T>& gpu, int p, int q) {
 
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < N; x++) {
+    for (int y = 0; y < p; y++) {
+        for (int x = 0; x < q; x++) {
 
-            auto a = cpu[y * N + x];
-            auto b = gpu[y * N + x];
+            auto a = cpu[y * q + x];
+            auto b = gpu[y * q + x];
 
             if (a != b) {
                 printf("invalid element at (%d, %d):\t: A = %d\tB = %d\n",
@@ -60,13 +60,13 @@ bool mat_check_result(const std::vector<T>& cpu, const std::vector<T>& gpu, int 
 }
 
 template<>
-bool mat_check_result<float>(const std::vector<float>& cpu, const std::vector<float>& gpu, int N) {
+bool mat_check_result<float>(const std::vector<float>& cpu, const std::vector<float>& gpu, int p, int q) {
 
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < N; x++) {
+    for (int y = 0; y < p; y++) {
+        for (int x = 0; x < q; x++) {
 
-            auto a = cpu[y * N + x];
-            auto b = gpu[y * N + x];
+            auto a = cpu[y * q + x];
+            auto b = gpu[y * q + x];
 
             if (!float_approx_equal(a, b, 1e-10)) {
                 return false;
