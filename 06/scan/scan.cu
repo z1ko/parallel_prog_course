@@ -101,15 +101,15 @@ int main(int argc, char** argv) {
     auto timer_gpu = timerGPU{};
     timer_gpu.start();
 
-    // Local scan inside each block
+    // Local scan inside each block, also stores block largest value
     scan_gpu<<<block_count, BLOCK_SIZE>>>(d_elements, d_result, d_blocks, N);
     cudaDeviceSynchronize();
 
-    // Scan of all the blocks
+    // Scan of all the blocks largest values
     scan_gpu<<<1, BLOCK_SIZE>>>(d_blocks, d_scan_blocks, NULL, BLOCK_SIZE * 2);
     cudaDeviceSynchronize();
     
-    // Fixes local scan values using then scan of all the blocks largest values
+    // Fixes local scan values using the scan of all the blocks largest values
     scan_fixup_gpu<<<block_count, BLOCK_SIZE>>>(d_result, d_scan_blocks, N);
     cudaDeviceSynchronize();
 
