@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
     // Create result array
     int *d_reduction;
     cudaMalloc(&d_reduction, sizeof(int));
+    cudaMemset(d_reduction, 0, sizeof(int));
     cuda_check_error();
 
     // ===================================================================================
