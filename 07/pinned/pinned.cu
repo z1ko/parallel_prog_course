@@ -71,7 +71,7 @@ void run_transfer_test(bool pinned)
     cuda_check_error();
   }
   inbound_timer.stop();
-  printf(" inbound: %.3f ms\n", outbound_timer.elapsed_ms());
+  printf(" inbound: %.3f ms\n", inbound_timer.elapsed_ms());
 
   if (pinned)
   {
